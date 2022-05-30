@@ -1,4 +1,9 @@
 from flask import render_template, request, Flask
+import sqlite3
+
+conn = sqlite3.connect(":memory:")
+
+cr = conn.c
 
 app = Flask(__name__)
 
