@@ -1,0 +1,14 @@
+
+.navButtons 
+{
+    border: solid 2px; 
+    border-radius: 10px; 
+    padding: 5px; 
+    font-family: 'Times New Roman'; 
+    font-size: large;
+    color: white;
+}
+
+.formInputs {
+    margin: 14px 14px 14px 14px;
+}

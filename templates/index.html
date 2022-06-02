@@ -1,15 +1,36 @@
-<!DOCTYPE html>
+{% extends "layout.html" %}
 
-<html>
-    <head>
-        <title>
-            web app
-        </title>
-    </head>
-    <body>
-        <p>
-            home page!
-        </p>
-    </body>
+{% block title %}
+    Home
+{% endblock %}
 
-</html>
+{% block main %}
+    <div class="container-fluid">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>foo</th>
+                    <th>bar</th>
+                    <th>baz</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
