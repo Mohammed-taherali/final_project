@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Distributor ID</th>
+                <th>Distributor Name</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for distributor in distributors %}
+            <tr>
+                <td>{{ distributor['dist_id'] }}</td>
+                <td>{{ distributor['dist_name'] }}</td>
+                <td>{{ distributor['contact_no'] }}</td>
+            </tr>
+            {% endfor%}
+        </tbody>
+    </table>
+{% endblock %}

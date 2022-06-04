@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <p id="demo">JavaScript can hide HTML elements.</p>
+
+<button type="button" onclick="document.getElementById('demo').style.display='none'">Click Me!</button>
+<button type="button" onclick="document.getElementById('demo').style.display='block'">Click Me!</button>
+<button type="button" onclick="test()" >Test</button>
+
+<button type="button" onclick="myFunc()">New button</button>
+<button type="button" class="btn btn-warning" onclick="alertFunc()">Alert Button</button>
+{% endblock %}
+
+<!-- {% block script %}
+    <script>
+        
+    </script>
+{% endblock %} -->

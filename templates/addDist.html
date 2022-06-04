@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <div class="container-fluid">
+        <form action="/addDist" method="post">
+            <input class="form-control mx-auto w-auto formInputs" autofocus name="distName" id="distName" placeholder="Dist. Name">
+            <input class="form-control mx-auto w-auto formInputs" name="distId" id="distId" placeholder="Dist. Id">
+            <input class="form-control mx-auto w-auto formInputs" name="distContact" id="distContact" placeholder="Dist. contact">
+            <input class="btn btn-success formInputs" type="submit" value="Add Distributor">
+        </form>
+    </div>
+{% endblock %}

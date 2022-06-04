@@ -10,6 +10,7 @@
         <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"></script>
         
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="/static/myScript.js"></script>
 
         <title>
             Patanwala Medical: {% block title %}{% endblock %}
@@ -18,7 +19,11 @@
     <body>
         <nav class="navbar navbar-expand-md navbar-dark" style="background-color: #353030;">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#" style="font-size: medium;">
+                {% if not session['username'] %}
+                <a class="navbar-brand" href="/login" style="font-size: medium;">
+                {% else %}
+                <a class="navbar-brand" href="/" style="font-size: medium;">
+                {% endif %}
                     <img src="/static/my_photo.jpg" style="border-radius: 50%;" alt="Logo" width="50" height="50">
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myNavbar" aria-controls="myNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,7 +32,7 @@
                 <div class="collapse navbar-collapse" id="myNavbar">
                     <ul class="navbar-nav ">
                       {% if session['username'] %}
-                        <li class="nav-item">
+                        <li class="nav-item active">
                             <a class="nav-link" href="/">
                               <div class="navButtons">
                                 Home
@@ -42,7 +47,21 @@
                           </a>
                         </li>
                         <li class="nav-item">
-                          <a class="nav-link" href="/logout">
+                          <a class="nav-link" href="/distInfo">
+                            <div class="navButtons">
+                              My Distributors
+                            </div>
+                          </a>
+                        </li>
+                        <li class="nav-item">
+                          <a class="nav-link" href="/addDist">
+                            <div class="navButtons">
+                              Add Distributor
+                            </div>
+                          </a>
+                        </li>
+                        <li class="nav-item">
+                          <a class="nav-link me-auto" href="/logout">
                             <div class="navButtons">
                               Logout
                             </div>
@@ -50,17 +69,26 @@
                         </li>
                         {% else %}
                         <li class="nav-item">
-                          <a class="nav-link ms-auto" style="font-size: larger; font-family: serif;" href="#">Patanwala Medical</a>
+                          <a class="nav-link ms-auto" style="font-size: larger; font-family: serif;" href="/login">Patanwala Medical</a>
                         </li>
                         {% endif %}
                     </ul>
                 </div>
             </div>
         </nav>
+        {% if get_flashed_messages() %}
+            <header>
+                <div class="alert alert-{{level}} mb-0 text-center" role="alert" id="info_mess" onclick="hide_element()">
+                    {{ get_flashed_messages() | join(" ") }}
+                </div>
+            </header>
+        {% endif %}
         
         
         <main class="container-fluid py-5 text-center">
           {% block main %}{% endblock %}
         </main>
+
+        {% block script %}{% endblock %}
     </body>
 </html>

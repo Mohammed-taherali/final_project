@@ -6,21 +6,27 @@
     
 {% block main %}
     <div class="container-fluid">
-        <form action="/additems" method="post">
-            <input class="form-control mx-auto w-auto formInputs" autofocus id="distName" name="distName" placeholder="Dist. Name" type="text">
-            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}">
-            <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" >
+        <form action="/addBill" method="post">
+            {% if current_dist %}
+            <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" value="{{ current_dist['distName'] }}" disabled>
+            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" disabled>
+            <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" value="{{ current_dist['no_of_items'] }}" disabled>
+            {% else %}
+            <input class="form-control mx-auto w-auto formInputs" autofocus id="distName" name="distName" placeholder="Dist. Name" type="text" required>
+            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" required>
+            <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" required>
             <input type="submit" class="btn btn-primary formInputs" value="Add">
+            {% endif %}
         </form>
         {% if no_of_items %}
-        <form>
+        <form action="/additems" method="post">
         {% for item in range(no_of_items) %}
         <div class="row mb-5">
-            <input class="form-control mx-auto w-auto formInputs" id="medName" name="medName" placeholder="Medicine Name" type="text">
-            <input class="form-control mx-auto w-auto formInputs" id="quantity" name="quantity" placeholder="Quantity" type="number">
-            <input class="form-control mx-auto w-auto formInputs" id="expiry" name="expiry" placeholder="Expiry" type="date">
-            <input class="form-control mx-auto w-auto formInputs" id="rate" name="rate" placeholder="Rate" type="number">
-            <input class="form-control mx-auto w-auto formInputs" id="mrp" name="mrp" placeholder="MRP" type="number">
+            <input class="form-control mx-auto w-auto formInputs" id="medName{{item}}" name="medName{{item}}" placeholder="Medicine Name" autofocus type="text">
+            <input class="form-control mx-auto w-auto formInputs" id="quantity{{item}}" name="quantity{{item}}" placeholder="Quantity" type="text">
+            <input class="form-control mx-auto w-auto formInputs" id="expiry{{item}}" name="expiry{{item}}" placeholder="Expiry" type="date">
+            <input class="form-control mx-auto w-auto formInputs" id="rate{{item}}" name="rate{{item}}" placeholder="Rate" type="text">
+            <input class="form-control mx-auto w-auto formInputs" id="mrp{{item}}" name="mrp{{item}}" placeholder="MRP" type="text">
         </div>
         {% endfor %}
         <input type="submit" class="btn btn-primary" value="Add Bill">

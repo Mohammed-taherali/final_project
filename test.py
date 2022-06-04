@@ -1,3 +1,7 @@
-abcd = "Amlip-5"
+lst = ["a","b","c"]
 
-print(abcd.upper())
+print(lst)
+
+lst = []
+
+print(lst)
