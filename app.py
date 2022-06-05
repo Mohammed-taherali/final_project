@@ -149,6 +149,7 @@ def addDist():
             print("not inserting!")
             flash("Distributor with this name exists!")
             return render_template("addDist.html", level="warning")
+            #this is good part
             # print("inserting latest row")
             # with conn:
             #     c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))

@@ -17,3 +17,5 @@ function hide_element() {
         flash_message.style.display = "none"  
     }, 1000)
 };
+
+// this works
