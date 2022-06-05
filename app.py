@@ -62,6 +62,7 @@ def index():
                         )""")
 
         return render_template("index.html", level="primary")
+        #this is the latest and working version
 
 @app.route("/addBill", methods=["GET", "POST"])
 def addBill():
@@ -72,7 +73,7 @@ def addBill():
             current_dist["distName"] = request.form.get("distName")
             current_dist["date"] = request.form.get("date")
             try:
-                current_dist["no_of_items"] = int(request.form.get("items"))        
+                current_dist["no_of_items"] = int(request.form.get("items"))
             except ValueError:
                 flash("Please enter an integer number!")
                 return render_template("addbill.html", level="warning")
@@ -88,7 +89,7 @@ def addBill():
             flash("This distributor is not added to your list of distributors! Please add them and try again!")
             return render_template("addbill.html", level="warning")
         return redirect("/additems")
-    
+
 
 @app.route("/additems", methods=["GET", "POST"])
 def additems():
@@ -188,7 +189,7 @@ def login():
     if request.method == "POST":
         if not request.form.get("username") or not request.form.get("password"):
             return apology("Please enter username and/or password!")
-        
+
         if request.form.get("username") != username or not check_password_hash(password, request.form.get("password")):
             return apology("Incorrect Id and/or password!")
 
