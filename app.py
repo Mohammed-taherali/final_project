@@ -130,9 +130,9 @@ def addDist():
         conn = get_db_connection()
         c = conn.cursor()
 
-        distName = request.form.get("distName").strip()
-        distId = request.form.get("distId").strip()
-        distContact = request.form.get("distContact").strip()
+        distName = request.form.get("distName").strip().upper()
+        distId = request.form.get("distId").strip().upper()
+        distContact = request.form.get("distContact").strip().upper()
 
         distributors = c.execute("SELECT * from distributor_info")
 
@@ -140,25 +140,32 @@ def addDist():
             flash("Please fill in all the details!")
             return render_template("addDist.html", level="warning", distributors=distributors)
 
-        # Check if distributor with the same name exists or not.
-        # else insert value into distributor_info table.
-        existing_dist = c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ?", (distName,)).fetchone()
-        print(existing_dist )
-        print("above is exit dist")
-
-        if not existing_dist:
-            print("not inserting!")
+        if c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ?", (distName,)).fetchone():
             flash("Distributor with this name exists!")
             return render_template("addDist.html", level="warning")
+
+        if c.execute("SELECT * FROM distributor_info WHERE dist_id = ?", (distId,)).fetchone():
+            flash("Please add a unique distributor Id!")
+            return render_template("addDist.html", level="warning")
+
+        # Check if distributor with the same name exists or not.
+        # else insert value into distributor_info table.
+        # existing_dist = c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ?", (distName,)).fetchone()
+        # print(existing_dist )
+        # print("above is exit dist")
+
+        # if existing_dist:
+        #     print("not inserting!")
+        #     flash("Distributor with this name exists!")
+        #     return render_template("addDist.html", level="warning")
             #this is good part
             # print("inserting latest row")
             # with conn:
             #     c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
 
-        else:
-            print("inserting latest row")
-            with conn:
-                c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
+        print("inserting latest row")
+        with conn:
+            c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
             # print("not inserting!")
             # flash("Distributor with this name exists!")
             # return render_template("addDist.html", level="warning")
