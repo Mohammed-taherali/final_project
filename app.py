@@ -22,25 +22,45 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-db = SQL("sqlite:///shop.db")
+# db = SQL("sqlite:///shop.db")
+def get_db_connection():
+    conn = sqlite3.connect("shop.db")
+    return conn
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if not session.get("username"):
         return redirect("/login")
     else:
-        db.execute("""CREATE TABLE IF NOT EXISTS bills (
-            invoice_no INTEGER NOT NULL,
-            dist_name TEXT NOT NULL,
-            date TEXT,
-            no_of_items INTEGER
-            )""")
+        # db.execute("""CREATE TABLE IF NOT EXISTS bills (
+        #     invoice_no INTEGER NOT NULL,
+        #     dist_name TEXT NOT NULL,
+        #     date TEXT,
+        #     no_of_items INTEGER
+        #     )""")
 
-        db.execute("""CREATE TABLE IF NOT EXISTS distributor_info (
-            dist_id TEXT primary key,
-            dist_name TEXT NOT NULL,
-            contact_no TEXT NOT NULL
-            )""")
+        # db.execute("""CREATE TABLE IF NOT EXISTS distributor_info (
+        #     dist_id TEXT primary key,
+        #     dist_name TEXT NOT NULL,
+        #     contact_no TEXT NOT NULL
+        #     )""")
+
+        conn = get_db_connection()
+        c = conn.cursor()
+        with conn:
+            c.execute("""CREATE TABLE IF NOT EXISTS bills (
+                        invoice_no INTEGER NOT NULL,
+                        dist_name TEXT NOT NULL,
+                        date TEXT,
+                        no_of_items INTEGER
+                        )""")
+
+            c.execute("""CREATE TABLE IF NOT EXISTS distributor_info (
+                        dist_id TEXT primary key,
+                        dist_name TEXT NOT NULL,
+                        contact_no TEXT NOT NULL
+                        )""")
+
         return render_template("index.html", level="primary")
 
 @app.route("/addBill", methods=["GET", "POST"])
@@ -61,7 +81,10 @@ def addBill():
             flash("Please fill in all the fields!")
             return render_template("addbill.html", level="warning")
 
-        if not db.execute("SELECT * FROM distributor_info WHERE dist_name = ?", current_dist['distName']):
+        # if not db.execute("SELECT * FROM distributor_info WHERE dist_name = ?", current_dist['distName']):
+        conn = get_db_connection()
+        c = conn.cursor()
+        if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (current_dist['distName'],)):
             flash("This distributor is not added to your list of distributors! Please add them and try again!")
             return render_template("addbill.html", level="warning")
         return redirect("/additems")
@@ -93,49 +116,63 @@ def additems():
 def addDist():
     # If user has reached through get request (button click or changing the url)
     if request.method == "GET":
-        distributors = db.execute("SELECT * from distributor_info")
-        return render_template("addDist.html", level="primary", distributors=distributors)
+        # conn = get_db_connection()
+        # c = conn.cursor()
+        # with conn:
+        #     distributors = c.execute("SELECT * from distributor_info")
+        return render_template("addDist.html", level="primary")
 
     # else user has reached here by submitting the form
     else:
 
         # Get the user inputs and validate them
+        conn = get_db_connection()
+        c = conn.cursor()
+
         distName = request.form.get("distName").strip()
-        if not distName:
-            distributors = db.execute("SELECT * from distributor_info")
-            flash("please enter Distributor Name!")
-            return render_template("addDist.html", level="warning", distributors=distributors)
-
         distId = request.form.get("distId").strip()
-        if not distId:
-            distributors = db.execute("SELECT * from distributor_info")
-            flash("Please enter Distributor Id!")
-            return render_template("addDist.html", level="warning", distributors=distributors)
-
         distContact = request.form.get("distContact").strip()
-        if not distContact:
-            distributors = db.execute("SELECT * from distributor_info")
-            flash("Please enter Distributor Contact!")
+
+        distributors = c.execute("SELECT * from distributor_info")
+
+        if not distName or not distId or not distContact:
+            flash("Please fill in all the details!")
             return render_template("addDist.html", level="warning", distributors=distributors)
 
         # Check if distributor with the same name exists or not.
         # else insert value into distributor_info table.
-        existing_dist = db.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (distName,))
-        if not existing_dist:
-            db.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", distId, distName, distContact)
+        existing_dist = c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ?", (distName,)).fetchone()
+        print(existing_dist )
+        print("above is exit dist")
 
-        else:
+        if not existing_dist:
+            print("not inserting!")
             flash("Distributor with this name exists!")
             return render_template("addDist.html", level="warning")
+            # print("inserting latest row")
+            # with conn:
+            #     c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
 
-        distributors = db.execute("SELECT * FROM distributor_info")
+        else:
+            print("inserting latest row")
+            with conn:
+                c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
+            # print("not inserting!")
+            # flash("Distributor with this name exists!")
+            # return render_template("addDist.html", level="warning")
+
+        # distributors = c.execute("SELECT * FROM distributor_info")
+
         flash("Distributor added successfully!")
         return redirect("/distInfo")
 
 
 @app.route("/distInfo", methods=["GET"])
 def distInfo():
-    distributors = db.execute("SELECT * FROM distributor_info")
+    conn = get_db_connection()
+    c = conn.cursor()
+    distributors = c.execute("SELECT * FROM distributor_info").fetchall()
+    print(distributors)
     return render_template("distInfo.html", level="primary", distributors=distributors)
 
 @app.route("/test")
