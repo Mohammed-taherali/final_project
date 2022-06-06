@@ -8,13 +8,31 @@
     <div class="container-fluid">
         <form action="/addBill" method="post">
             {% if current_dist %}
+            <label for="invoiceNo">Invoice number:</label><br>
+            <input class="form-control mx-auto w-auto formInputs" id="invoiceNo" name="invoiceNo" placeholder="Invoice No." type="text" value="{{ current_dist['invoiceNo'] }}" disabled>
+            
+            <label for="distName" >Distributor Name:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" value="{{ current_dist['distName'] }}" disabled>
+            
+            <label for="date" >Date:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" disabled>
+            
+            <label for="items" >No of items:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" value="{{ current_dist['no_of_items'] }}" disabled>
+            <br>
             {% else %}
-            <input class="form-control mx-auto w-auto formInputs" autofocus id="distName" name="distName" placeholder="Dist. Name" type="text" required>
-            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" required>
-            <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" required>
+            <label for="invoiceNo">Invoice number:</label><br>
+            <input class="form-control mx-auto w-auto formInputs" autofocus id="invoiceNo" name="invoiceNo" placeholder="Invoice No." type="text">
+            
+            <label for="distName" >Distributor Name:</label><br>
+            <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" >
+            
+            <label for="date" >Date:</label><br>
+            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" >
+            
+            <label for="items" >No of items:</label><br>
+            <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" >
+            
             <input type="submit" class="btn btn-primary formInputs" value="Add">
             {% endif %}
         </form>
@@ -22,11 +40,21 @@
         <form action="/additems" method="post">
         {% for item in range(no_of_items) %}
         <div class="row mb-5">
+            <h5>Medicine {{item + 1}} details:</h5><br>
+            <!-- <label for="medName{{item}}">Medicine name:</label> -->
             <input class="form-control mx-auto w-auto formInputs" id="medName{{item}}" name="medName{{item}}" placeholder="Medicine Name" autofocus type="text">
+
+            <!-- <label for="quantity{{item}}">Quantity:</label> -->
             <input class="form-control mx-auto w-auto formInputs" id="quantity{{item}}" name="quantity{{item}}" placeholder="Quantity" type="text">
-            <input class="form-control mx-auto w-auto formInputs" id="expiry{{item}}" name="expiry{{item}}" placeholder="Expiry" type="date">
+
+            <!-- <label for="rate{{item}}">Rate:</label> -->
             <input class="form-control mx-auto w-auto formInputs" id="rate{{item}}" name="rate{{item}}" placeholder="Rate" type="text">
+
+            <!-- <label for="mrp{{item}}">MRP:</label> -->
             <input class="form-control mx-auto w-auto formInputs" id="mrp{{item}}" name="mrp{{item}}" placeholder="MRP" type="text">
+
+            <label for="expiry{{item}}">Expiry:</label>
+            <input class="form-control mx-auto w-auto formInputs" id="expiry{{item}}" name="expiry{{item}}" placeholder="Expiry" type="date">
         </div>
         {% endfor %}
         <input type="submit" class="btn btn-primary" value="Add Bill">

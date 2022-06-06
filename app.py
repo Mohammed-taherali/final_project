@@ -48,17 +48,18 @@ def index():
         conn = get_db_connection()
         c = conn.cursor()
         with conn:
-            c.execute("""CREATE TABLE IF NOT EXISTS bills (
-                        invoice_no INTEGER NOT NULL,
-                        dist_name TEXT NOT NULL,
-                        date TEXT,
-                        no_of_items INTEGER
-                        )""")
-
             c.execute("""CREATE TABLE IF NOT EXISTS distributor_info (
                         dist_id TEXT primary key,
                         dist_name TEXT NOT NULL,
                         contact_no TEXT NOT NULL
+                        )""")
+
+            c.execute("""CREATE TABLE IF NOT EXISTS bills (
+                        invoice_no TEXT PRIMARY KEY NOT NULL,
+                        dist_name TEXT NOT NULL,
+                        date TEXT,
+                        no_of_items INTEGER,
+                        FOREIGN KEY(dist_name) REFERENCES distributor_info(dist_name)
                         )""")
 
         return render_template("index.html", level="primary")
@@ -66,28 +67,55 @@ def index():
 
 @app.route("/addBill", methods=["GET", "POST"])
 def addBill():
+    """
+    This function adds new bills to the database.
+    """
+
+    current_date = date.today().strftime("%d/%m/%Y")
+
+    # Render template to enter the bill details
     if request.method == "GET":
-        return render_template("addbill.html", current_date = date.today().strftime("%d/%m/%Y"), level="primary")
+        return render_template("addbill.html", current_date = current_date, level="primary")
+    
+    # Else user has entered the bill details
     else:
-        if request.form.get("distName") and request.form.get("date") and request.form.get("items"):
-            current_dist["distName"] = request.form.get("distName")
-            current_dist["date"] = request.form.get("date")
-            try:
-                current_dist["no_of_items"] = int(request.form.get("items"))
-            except ValueError:
-                flash("Please enter an integer number!")
+
+        # Connect to the database.
+        conn = get_db_connection()
+        c = conn.cursor()
+
+        # Validate the details and update the database
+        current_dist["invoiceNo"] = request.form.get("invoiceNo").strip().upper()
+        current_dist["distName"] = request.form.get("distName").strip().upper()
+        current_dist["date"] = request.form.get("date").strip().upper()
+        try:
+            current_dist["no_of_items"] = int(request.form.get("items").strip())
+        except ValueError:
+            flash("Please enter an integer number!")
+            return render_template("addbill.html", level="warning")
+
+        if current_dist["distName"] and current_dist["date"] and current_dist["no_of_items"] and current_dist["invoiceNo"]:
+
+            if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (current_dist["distName"],)).fetchone():
+
+                flash("This distributor is not added to your list of distributors! Please add them and try again!")
                 return render_template("addbill.html", level="warning")
+
+            if c.execute("SELECT * FROM bills where invoice_no = ?", (current_dist["invoiceNo"],)).fetchone():
+                flash("Bill with this Invoice number exists!")
+                return render_template("addbill.html", level="warning", current_date=current_date)
+
+            # with conn:
+            #     c.execute("INSERT INTO bills(invoice_no, dist_name, date, no_of_items) values(?,?,?,?)", (current_dist["invoiceNo"], current_dist["distName"], current_dist["date"], current_dist["no_of_items"]))
 
         else:
             flash("Please fill in all the fields!")
-            return render_template("addbill.html", level="warning")
+            return render_template("addbill.html", level="warning", current_date=current_date)
 
         # if not db.execute("SELECT * FROM distributor_info WHERE dist_name = ?", current_dist['distName']):
-        conn = get_db_connection()
-        c = conn.cursor()
-        if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (current_dist['distName'],)):
-            flash("This distributor is not added to your list of distributors! Please add them and try again!")
-            return render_template("addbill.html", level="warning")
+        # if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (current_dist['distName'],)):
+        #     flash("This distributor is not added to your list of distributors! Please add them and try again!")
+        #     return render_template("addbill.html", level="warning")
         return redirect("/additems")
 
 
@@ -96,10 +124,27 @@ def additems():
     """
     This function adds the items entered to the respective bill
     """
-
     if request.method == "POST":
+
+        conn = get_db_connection()
+        c = conn.cursor()
+
+        # if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
+        #     or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
+
+        #     flash("Please enter all the details!")
+        #     return render_template("addbill.html", level="warning", current_date=current_dist["date"])
+
+        # else:
+
         bill_items = []
         for bill in range(current_dist["no_of_items"]):
+
+            if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
+            or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
+                flash("Please enter all the details!")
+                return render_template("addbill.html", level="warning", current_date=current_dist["date"], current_dist=current_dist, no_of_items=current_dist["no_of_items"])
+
             bills = {}
             bills["medName"] = request.form.get(f"medName{bill}")
             bills["quantity"] = int(request.form.get(f"quantity{bill}"))
@@ -107,11 +152,24 @@ def additems():
             bills["rate"] = float(request.form.get(f"rate{bill}"))
             bills["mrp"] = float(request.form.get(f"mrp{bill}"))
             bill_items.append(bills)
-        print(bill_items)
+
+        
+        # Insert bill info into database.
+        
+        
+
+        # for bill in bill_items:
+        #     if not bill['medName'] or not bill['quantity'] or not bill["expiry"] or not bill['rate'] or not bill['mrp']:
+        #         flash("Please fill in all the fields!")
+        #         return render_template("addbill.html", level="warning", current_date=current_dist["date"])
+
         return redirect("/")
+        
     elif request.method == "GET":
-        current_date = date.today().strftime("%d/%m/%Y")
-        return render_template("addbill.html", current_date=current_date, no_of_items=current_dist["no_of_items"], level="primary", current_dist=current_dist)
+        try:
+            return render_template("addbill.html", current_date=current_dist["date"], no_of_items=current_dist["no_of_items"], level="primary", current_dist=current_dist)
+        except KeyError:
+            return redirect("/addBill")
 
 @app.route("/addDist", methods=["GET", "POST"])
 def addDist():
