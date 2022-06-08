@@ -62,6 +62,17 @@ def index():
                         FOREIGN KEY(dist_name) REFERENCES distributor_info(dist_name)
                         )""")
 
+            c.execute("""CREATE TABLE IF NOT EXISTS medicines (
+                        invoice_no TEXT,
+                        med_name TEXT NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        rate REAL NOT NULL,
+                        mrp REAL NOT NULL,
+                        expiry TEXT NOT NULL
+            )""")
+
+            # print(c.execute("SELECT * FROM distributor_info ORDER BY ? asc", ('dist_name',)).fetchall())
+
         return render_template("index.html", level="primary")
         #this is the latest and working version
 
@@ -139,7 +150,8 @@ def additems():
 
         bill_items = []
         for bill in range(current_dist["no_of_items"]):
-
+            print(request.form.get(f"expiry{bill}"))
+            print(type(request.form.get(f"expiry{bill}")))
             if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
             or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
                 flash("Please enter all the details!")
@@ -147,15 +159,18 @@ def additems():
 
             bills = {}
             bills["medName"] = request.form.get(f"medName{bill}")
-            bills["quantity"] = int(request.form.get(f"quantity{bill}"))
             bills["expiry"] = request.form.get(f"expiry{bill}")
-            bills["rate"] = float(request.form.get(f"rate{bill}"))
-            bills["mrp"] = float(request.form.get(f"mrp{bill}"))
+            try:
+                bills["quantity"] = int(request.form.get(f"quantity{bill}"))
+                bills["rate"] = float(request.form.get(f"rate{bill}"))
+                bills["mrp"] = float(request.form.get(f"mrp{bill}"))
+            except ValueError:
+                flash("Please enter an integer or decimal number!")
+                return render_template("addbill.html", level="warning", current_date=current_dist["date"], current_dist=current_dist, no_of_items=current_dist["no_of_items"])
             bill_items.append(bills)
-
         
         # Insert bill info into database.
-        
+
         
 
         # for bill in bill_items:
