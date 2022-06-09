@@ -13,7 +13,8 @@
         <script src="/static/myScript.js"></script>
 
         <title>
-            Patanwala Medical: {% block title %}{% endblock %}
+          {% if session["username"] == "taherali" %}
+            Patanwala Medical: {% endif %} {% block title %}{% endblock %}
         </title>
     </head>
     <body>
@@ -68,8 +69,14 @@
                           </a>
                         </li>
                         {% else %}
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                           <a class="nav-link ms-auto" style="font-size: larger; font-family: serif;" href="/login">Patanwala Medical</a>
+                        </li> -->
+                        <li class="nav-item">
+                          <a class="nav-link ms-auto" style="font-size: larger; font-family: serif;" href="/login">Login</a>
+                        </li>
+                        <li class="nav-item">
+                          <a class="nav-link ms-auto" style="font-size: larger; font-family: serif;" href="/register">Register</a>
                         </li>
                         {% endif %}
                     </ul>
