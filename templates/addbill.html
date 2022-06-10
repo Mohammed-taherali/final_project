@@ -15,7 +15,7 @@
             <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" value="{{ current_dist['distName'] }}" disabled>
             
             <label for="date" >Date:</label><br>
-            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" disabled>
+            <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_dist['date'] }}" disabled>
             
             <label for="items" >No of items:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="items" name="items" placeholder="No. of items" type="number" value="{{ current_dist['no_of_items'] }}" disabled>
@@ -36,9 +36,10 @@
             <input type="submit" class="btn btn-primary formInputs" value="Add">
             {% endif %}
         </form>
-        {% if no_of_items %}
+        {% if current_dist %}
+        {% if current_dist['no_of_items'] %}
         <form action="/additems" method="post">
-        {% for item in range(no_of_items) %}
+        {% for item in range(current_dist['no_of_items']) %}
         <div class="row mb-5">
             <h5>Medicine {{item + 1}} details:</h5><br>
             <!-- <label for="medName{{item}}">Medicine name:</label> -->
@@ -59,6 +60,7 @@
         {% endfor %}
         <input type="submit" class="btn btn-primary" value="Add Bill">
         </form>
+        {% endif %}
         {% endif %}
     </div>
 {% endblock %}

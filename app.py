@@ -88,13 +88,14 @@ def index():
             c.execute("""CREATE TABLE IF NOT EXISTS medicines (
                         id INTEGER NOT NULL,
                         invoice_no TEXT,
-                        med_name TEXT NOT NULL,
+                        med_name TEXT UNIQUE NOT NULL,
                         quantity INTEGER NOT NULL,
                         rate REAL NOT NULL,
                         mrp REAL NOT NULL,
                         expiry TEXT NOT NULL,
-                        FOREIGN KEY(id) REFERENCES users(user_id)
-            )""")
+                        FOREIGN KEY(id) REFERENCES users(user_id),
+                        FOREIGN KEY(invoice_no) REFERENCES bills
+                        )""")
 
             # print(c.execute("SELECT * FROM distributor_info ORDER BY ? asc", ('dist_name',)).fetchall())
             # logging.debug("DEBUG MODULE")
@@ -114,7 +115,7 @@ def addBill():
 
     # Render template to enter the bill details
     if request.method == "GET":
-        return render_template("addbill.html", current_date = current_date, level="primary")
+        return render_template("addbill.html", current_date = current_date)
     
     # Else user has entered the bill details
     else:
@@ -126,7 +127,7 @@ def addBill():
         # Validate the details and update the database
         current_dist["invoiceNo"] = request.form.get("invoiceNo").strip().upper()
         current_dist["distName"] = request.form.get("distName").strip().upper()
-        current_dist["date"] = request.form.get("date").strip().upper()
+        current_dist["date"] = request.form.get("date").strip()
         try:
             current_dist["no_of_items"] = int(request.form.get("items").strip())
         except ValueError:
@@ -135,12 +136,12 @@ def addBill():
 
         if current_dist["distName"] and current_dist["date"] and current_dist["no_of_items"] and current_dist["invoiceNo"]:
 
-            if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ? and id = ?", (current_dist["distName"],)).fetchone():
+            if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ? and id = ?", (current_dist["distName"], session["user_id"])).fetchone():
 
                 flash("This distributor is not added to your list of distributors! Please add them and try again!")
                 return render_template("addbill.html", level="warning")
 
-            if c.execute("SELECT * FROM bills where invoice_no = ?", (current_dist["invoiceNo"],)).fetchone():
+            if c.execute("SELECT * FROM bills where invoice_no = ? and id = ?", (current_dist["invoiceNo"], session["user_id"])).fetchone():
                 flash("Bill with this Invoice number exists!")
                 return render_template("addbill.html", level="warning", current_date=current_date)
 
@@ -178,15 +179,15 @@ def additems():
 
         bill_items = []
         for bill in range(current_dist["no_of_items"]):
-            print(request.form.get(f"expiry{bill}"))
-            print(type(request.form.get(f"expiry{bill}")))
+            # print(request.form.get(f"expiry{bill}"))
+            # print(type(request.form.get(f"expiry{bill}")))
             if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
             or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
                 flash("Please enter all the details!")
                 return render_template("addbill.html", level="warning", current_date=current_dist["date"], current_dist=current_dist, no_of_items=current_dist["no_of_items"])
 
             bills = {}
-            bills["medName"] = request.form.get(f"medName{bill}")
+            bills["medName"] = request.form.get(f"medName{bill}").strip().upper()
             bills["expiry"] = request.form.get(f"expiry{bill}")
             try:
                 bills["quantity"] = int(request.form.get(f"quantity{bill}"))
@@ -194,12 +195,17 @@ def additems():
                 bills["mrp"] = float(request.form.get(f"mrp{bill}"))
             except ValueError:
                 flash("Please enter an integer or decimal number!")
-                return render_template("addbill.html", level="warning", current_date=current_dist["date"], current_dist=current_dist, no_of_items=current_dist["no_of_items"])
+                return render_template("addbill.html", level="warning", current_dist=current_dist)
             bill_items.append(bills)
+
+        print(bill_items)
+
+        # TODO part
+        """for item in bill_items:
+
+            c.execute("SELECT ") """
         
         # Insert bill info into database.
-
-        
 
         # for bill in bill_items:
         #     if not bill['medName'] or not bill['quantity'] or not bill["expiry"] or not bill['rate'] or not bill['mrp']:
@@ -210,7 +216,7 @@ def additems():
         
     elif request.method == "GET":
         try:
-            return render_template("addbill.html", current_date=current_dist["date"], no_of_items=current_dist["no_of_items"], level="primary", current_dist=current_dist)
+            return render_template("addbill.html", level="primary", current_dist=current_dist)
         except KeyError:
             return redirect("/addBill")
 
@@ -312,7 +318,11 @@ def login():
             return apology("Please enter username and/or password!")
 
         # Check password
-        hash_password = c.execute("SELECT hash FROM users WHERE user_name = ?", (request.form.get("username").strip(),)).fetchone()[0]
+        try:
+            hash_password = c.execute("SELECT hash FROM users WHERE user_name = ?", (request.form.get("username").strip(),)).fetchone()[0]
+        except TypeError:
+            flash("Invalid username and/or password!")
+            return render_template("login.html", level="primary")
 
         if not check_password_hash(hash_password, request.form.get("password")):
             # print(hash_password, request.form.get("password"))
