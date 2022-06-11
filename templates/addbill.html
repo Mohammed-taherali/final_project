@@ -8,13 +8,13 @@
     <div class="container-fluid">
         <form action="/addBill" method="post">
             {% if current_dist %}
-            <label for="invoiceNo">Invoice number:</label><br>
+            <label for="invoiceNo">Invoice number:</label>
             <input class="form-control mx-auto w-auto formInputs" id="invoiceNo" name="invoiceNo" placeholder="Invoice No." type="text" value="{{ current_dist['invoiceNo'] }}" disabled>
             
             <label for="distName" >Distributor Name:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" value="{{ current_dist['distName'] }}" disabled>
             
-            <label for="date" >Date:</label><br>
+            <label for="date" >Date: (YYYY-MM-DD format)</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_dist['date'] }}" disabled>
             
             <label for="items" >No of items:</label><br>
@@ -27,7 +27,7 @@
             <label for="distName" >Distributor Name:</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="distName" name="distName" placeholder="Dist. Name" type="text" >
             
-            <label for="date" >Date:</label><br>
+            <label for="date" >Date: (YYYY-MM-DD format)</label><br>
             <input class="form-control mx-auto w-auto formInputs" id="date" name="date" placeholder="Date" type="text" value="{{ current_date }}" >
             
             <label for="items" >No of items:</label><br>
@@ -49,7 +49,7 @@
             <input class="form-control mx-auto w-auto formInputs" id="quantity{{item}}" name="quantity{{item}}" placeholder="Quantity" type="text">
 
             <!-- <label for="rate{{item}}">Rate:</label> -->
-            <input class="form-control mx-auto w-auto formInputs" id="rate{{item}}" name="rate{{item}}" placeholder="Rate" type="text">
+            <input class="form-control mx-auto w-auto formInputs" id="rate{{item}}" name="rate{{item}}" placeholder="Rate (without tax)" type="text">
 
             <!-- <label for="mrp{{item}}">MRP:</label> -->
             <input class="form-control mx-auto w-auto formInputs" id="mrp{{item}}" name="mrp{{item}}" placeholder="MRP" type="text">

@@ -6,7 +6,7 @@ from datetime import date
 from cs50 import SQL
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology
+from helpers import apology, login_required
 logging.basicConfig(filename='logging.log',level=logging.CRITICAL,
                     format= "[%(levelname)s] %(asctime)s - %(message)s")
 
@@ -39,24 +39,13 @@ def after_request(response):
     return response
 
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
 
     if not session.get("user_id"):
         return redirect("/login")
     
     else:
-        # db.execute("""CREATE TABLE IF NOT EXISTS bills (
-        #     invoice_no INTEGER NOT NULL,
-        #     dist_name TEXT NOT NULL,
-        #     date TEXT,
-        #     no_of_items INTEGER
-        #     )""")
-
-        # db.execute("""CREATE TABLE IF NOT EXISTS distributor_info (
-        #     dist_id TEXT primary key,
-        #     dist_name TEXT NOT NULL,
-        #     contact_no TEXT NOT NULL
-        #     )""")
 
         conn = get_db_connection()
         c = conn.cursor()
@@ -77,7 +66,7 @@ def index():
 
             c.execute("""CREATE TABLE IF NOT EXISTS bills (
                         id INTEGER,
-                        invoice_no TEXT UNIQUE NOT NULL,
+                        invoice_no TEXT PRIMARY KEY,
                         dist_name TEXT NOT NULL,
                         date TEXT NOT NULL,
                         no_of_items INTEGER NOT NULL,
@@ -85,33 +74,44 @@ def index():
                         FOREIGN KEY(id) REFERENCES users(user_id)
                         )""")
 
-            c.execute("""CREATE TABLE IF NOT EXISTS medicines (
-                        id INTEGER NOT NULL,
-                        invoice_no TEXT,
-                        med_name TEXT UNIQUE NOT NULL,
-                        quantity INTEGER NOT NULL,
-                        rate REAL NOT NULL,
+            c.execute("""CREATE TABLE IF NOT EXISTS med_details(
+                        id INTEGER,
+                        med_no INTEGER PRIMARY KEY AUTOINCREMENT,
+                        med_name TEXT NOT NULL,
+                        rate REAL,
                         mrp REAL NOT NULL,
                         expiry TEXT NOT NULL,
-                        FOREIGN KEY(id) REFERENCES users(user_id),
-                        FOREIGN KEY(invoice_no) REFERENCES bills
+                        quantity INTEGER NOT NULL,
+                        FOREIGN KEY(id) REFERENCES users(id)
                         )""")
 
-            # print(c.execute("SELECT * FROM distributor_info ORDER BY ? asc", ('dist_name',)).fetchall())
-            # logging.debug("DEBUG MODULE")
-            # print(session["username"])
+            c.execute("""CREATE TABLE IF NOT EXISTS bill_info (
+                        id INTEGER NOT NULL,
+                        invoice_no TEXT,
+                        med_name TEXT,
+                        quantity INTEGER NOT NULL,
+                        FOREIGN KEY(id) REFERENCES users(user_id),
+                        FOREIGN KEY(invoice_no) REFERENCES bills(invoice_no),
+                        FOREIGN KEY(med_name) REFERENCES med_details(med_name)
+                        )""")
+
+            # Itmes removed from bill_info table
+            # rate REAL NOT NULL,
+            # mrp REAL NOT NULL,
+            # expiry TEXT NOT NULL,
 
         return render_template("index.html", level="primary")
         #this is the latest and working version
 
 
 @app.route("/addBill", methods=["GET", "POST"])
+@login_required
 def addBill():
     """
     This function adds new bills to the database.
     """
 
-    current_date = date.today().strftime("%d/%m/%Y")
+    current_date = date.today().strftime("%Y-%m-%d")
 
     # Render template to enter the bill details
     if request.method == "GET":
@@ -145,21 +145,15 @@ def addBill():
                 flash("Bill with this Invoice number exists!")
                 return render_template("addbill.html", level="warning", current_date=current_date)
 
-            # with conn:
-            #     c.execute("INSERT INTO bills(invoice_no, dist_name, date, no_of_items) values(?,?,?,?)", (current_dist["invoiceNo"], current_dist["distName"], current_dist["date"], current_dist["no_of_items"]))
-
         else:
             flash("Please fill in all the fields!")
             return render_template("addbill.html", level="warning", current_date=current_date)
 
-        # if not db.execute("SELECT * FROM distributor_info WHERE dist_name = ?", current_dist['distName']):
-        # if not c.execute("SELECT * FROM distributor_info WHERE dist_name = ?", (current_dist['distName'],)):
-        #     flash("This distributor is not added to your list of distributors! Please add them and try again!")
-        #     return render_template("addbill.html", level="warning")
         return redirect("/additems")
 
 
 @app.route("/additems", methods=["GET", "POST"])
+@login_required
 def additems():
     """
     This function adds the items entered to the respective bill
@@ -169,22 +163,20 @@ def additems():
         conn = get_db_connection()
         c = conn.cursor()
 
-        # if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
-        #     or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
-
-        #     flash("Please enter all the details!")
-        #     return render_template("addbill.html", level="warning", current_date=current_dist["date"])
-
-        # else:
-
+        tax = 0.12
         bill_items = []
         for bill in range(current_dist["no_of_items"]):
-            # print(request.form.get(f"expiry{bill}"))
-            # print(type(request.form.get(f"expiry{bill}")))
-            if not request.form.get(f"medName{bill}") or not request.form.get(f"quantity{bill}") or not request.form.get(f"expiry{bill}") \
-            or not request.form.get(f"rate{bill}") or not request.form.get(f"mrp{bill}"):
+    
+            if not request.form.get(f"medName{bill}") or not \
+            request.form.get(f"quantity{bill}") or not \
+            request.form.get(f"expiry{bill}") or not \
+            request.form.get(f"rate{bill}") or not \
+            request.form.get(f"mrp{bill}"):
+
                 flash("Please enter all the details!")
-                return render_template("addbill.html", level="warning", current_date=current_dist["date"], current_dist=current_dist, no_of_items=current_dist["no_of_items"])
+                return render_template("addbill.html", level="warning", \
+                current_date=current_dist["date"], current_dist=current_dist,\
+                no_of_items=current_dist["no_of_items"])
 
             bills = {}
             bills["medName"] = request.form.get(f"medName{bill}").strip().upper()
@@ -195,41 +187,85 @@ def additems():
                 bills["mrp"] = float(request.form.get(f"mrp{bill}"))
             except ValueError:
                 flash("Please enter an integer or decimal number!")
-                return render_template("addbill.html", level="warning", current_dist=current_dist)
+                return render_template("addbill.html", level="warning", \
+                current_dist=current_dist)
+
             bill_items.append(bills)
 
-        print(bill_items)
+        with conn:
+            c.execute("INSERT INTO bills(id, invoice_no, dist_name, date, no_of_items) VALUES(?,?,?,?,?)", 
+            (session["user_id"], current_dist["invoiceNo"], current_dist["distName"], current_dist["date"], current_dist["no_of_items"]))
 
-        # TODO part
-        """for item in bill_items:
+            for item in bill_items:
 
-            c.execute("SELECT ") """
-        
-        # Insert bill info into database.
+                # Check medicines and insert value into med_details table
+                # will do afterwards
+                if c.execute("SELECT * FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone():
+                    price = c.execute("SELECT mrp FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0] 
+                    expiry = c.execute("SELECT expiry FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0]
 
-        # for bill in bill_items:
-        #     if not bill['medName'] or not bill['quantity'] or not bill["expiry"] or not bill['rate'] or not bill['mrp']:
-        #         flash("Please fill in all the fields!")
-        #         return render_template("addbill.html", level="warning", current_date=current_dist["date"])
+                    if price == item["mrp"] and expiry == item["expiry"]:
+                        existing_quantity = int(c.execute("SELECT quantity FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0])
+                        c.execute("UPDATE med_details SET quantity = ? WHERE med_name = ? and id = ?", (existing_quantity + item["quantity"], item["medName"], session["user_id"]))
+
+                        # c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
+                        # (session["user_id"], item["medName"], item["rate"], item["mrp"], item["expiry"], existing_quantity + item["quantity"]))
+
+                    else:
+                        c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
+                        (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
+
+                else:
+                    # Will do this afterwards.
+                    c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
+                    (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
+
+                c.execute("INSERT INTO bill_info(id, invoice_no, med_name, quantity) VALUES(?,?,?,?)", 
+                (session["user_id"], current_dist["invoiceNo"], item["medName"], item["quantity"]))
+
+            
+
+            # id INTEGER NOT NULL,
+            # invoice_no TEXT,
+            # med_name TEXT,
+            # quantity INTEGER NOT NULL,
+
+            # id INTEGER,
+            # med_no INTEGER PRIMARY KEY AUTOINCREMENT,
+            # med_name TEXT NOT NULL,
+            # rate REAL,
+            # mrp REAL NOT NULL,
+            # expiry TEXT NOT NULL,
+            # quantity INTEGER NOT NULL,
+            # FOREIGN KEY(id) REFERENCES users(id)
+
+            """
+            id INTEGER,
+            invoice_no TEXT PRIMARY KEY,
+            dist_name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            no_of_items INTEGER NOT NULL,
+            FOREIGN KEY(dist_name) REFERENCES distributor_info(dist_name),
+            FOREIGN KEY(id) REFERENCES users(user_id)
+            """
 
         return redirect("/")
         
     elif request.method == "GET":
         try:
-            return render_template("addbill.html", level="primary", current_dist=current_dist)
+            return render_template("addbill.html", level="primary", \
+            current_dist=current_dist)
         except KeyError:
             return redirect("/addBill")
 
 
 @app.route("/addDist", methods=["GET", "POST"])
+@login_required
 def addDist():
 
     # If user has reached through get request (button click or changing the url)
     if request.method == "GET":
-        # conn = get_db_connection()
-        # c = conn.cursor()
-        # with conn:
-        #     distributors = c.execute("SELECT * from distributor_info")
+    
         return render_template("addDist.html", level="primary")
 
     # else user has reached here by submitting the form
@@ -257,51 +293,31 @@ def addDist():
             flash("Please add a unique distributor Id!")
             return render_template("addDist.html", level="warning")
 
-        # Check if distributor with the same name exists or not.
-        # else insert value into distributor_info table.
-        # existing_dist = c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ?", (distName,)).fetchone()
-        # print(existing_dist )
-        # print("above is exit dist")
-
-        # if existing_dist:
-        #     print("not inserting!")
-        #     flash("Distributor with this name exists!")
-        #     return render_template("addDist.html", level="warning")
-            #this is good part
-            # print("inserting latest row")
-            # with conn:
-            #     c.execute("INSERT INTO distributor_info(dist_id, dist_name, contact_no) values(?, ?, ?)", (distId.strip().upper(), distName.strip().upper(), distContact))
-
-        # print("inserting latest row")
         with conn:
             c.execute("INSERT INTO distributor_info(id, dist_id, dist_name, contact_no) values(?, ?, ?, ?)", (session["user_id"], distId.strip().upper(), distName.strip().upper(), distContact))
-            # print("not inserting!")
-            # flash("Distributor with this name exists!")
-            # return render_template("addDist.html", level="warning")
-
-        # distributors = c.execute("SELECT * FROM distributor_info")
 
         flash("Distributor added successfully!")
         return redirect("/distInfo")
 
 
 @app.route("/distInfo", methods=["GET"])
+@login_required
 def distInfo():
     conn = get_db_connection()
     c = conn.cursor()
-    distributors = c.execute("SELECT dist_id, dist_name, contact_no FROM distributor_info").fetchall()
-    # print(distributors)
+    distributors = c.execute("SELECT dist_id, dist_name, contact_no FROM distributor_info where id = ?", (session["user_id"],)).fetchall()
     return render_template("distInfo.html", level="primary", distributors=distributors)
 
 
 @app.route("/test")
+@login_required
 def test():
     return render_template("test.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Log user in"""
+    """Log user in""" 
 
     # Forget any user
     session.clear()
@@ -329,25 +345,15 @@ def login():
             flash("Invalid username and/or password!")
             return render_template("login.html", level="primary")
 
-        # user_id = c.execute("SELECT user_id FROM users WHERE user_name = ?", (request.form.get("username"),)).fetchone()[0]
-
         # Remember which user has logged in
         session["user_id"] = int(c.execute("SELECT user_id FROM users WHERE user_name = ?", (request.form.get("username"),)).fetchone()[0])
         session["username"] = request.form.get("username").strip()
-        # print(session["user_id"])
+        print(session["user_id"])
+        print(session["username"])
 
         flash("Successfully logged In!")
         return redirect("/")
 
-        # if request.form.get("username") != username or not check_password_hash(password, request.form.get("password")):
-        #     return apology("Incorrect Id and/or password!")
-
-        # else:
-        #     session["username"] = username
-        #     session["password"] = request.form.get("password")
-
-    #         flash("Succesfully logged In!")
-    #         return redirect("/")
     elif request.method == "GET":
         return render_template("login.html")
 

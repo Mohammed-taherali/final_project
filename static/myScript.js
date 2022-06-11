@@ -18,4 +18,14 @@ function hide_element() {
     }, 1000)
 };
 
+function show_password() {
+    var pass = document.getElementById("password");
+    if (pass.type === "password") {
+        pass.type = "text";
+    }
+    else {
+        pass.type = "password";
+    }
+}
+
 // this works
