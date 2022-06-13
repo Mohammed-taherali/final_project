@@ -8,9 +8,10 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Distributor ID</th>
-                <th>Distributor Name</th>
-                <th>Contact</th>
+                <th style="width: 20%;">Distributor ID</th>
+                <th style="width: 20%;">Distributor Name</th>
+                <th style="width: 20%;">Contact</th>
+                <th style="width: 20%;">Remove Distributor</th>
             </tr>
         </thead>
         <tbody>
@@ -19,6 +20,17 @@
                 <td>{{ distributor[0] }}</td>
                 <td>{{ distributor[1] }}</td>
                 <td>{{ distributor[2] }}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="deletionConfirmation('confirmDelete{{ distributor[0] }}')">Remove</button>
+                    <div id="confirmDelete{{ distributor[0] }}" style="display: none;">
+                        <form action="/removeDist", method="post">
+                        <input type="hidden" id="{{ distributor[0] }}" name="{{ distributor[0] }}" value="{{ distributor[0] }}">
+                        <p style="color: red;" class="py-2"><strong>Delete this distributor?</strong></p>
+                        <a href="/removeDist"><button class="btn btn-secondary" type="submit">Yes</button></a>
+                        <button class="btn btn-primary" onclick="deletionConfirmation('confirmDelete{{ distributor[0] }}')">No</button>
+                        </form>
+                    </div>
+                </td>
             </tr>
             {% endfor%}
         </tbody>

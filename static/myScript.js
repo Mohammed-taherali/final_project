@@ -1,16 +1,3 @@
-function myFunc() {
-    document.getElementById("demo").innerHTML = "Part 2";
-}
-
-function alertFunc() {
-    alert("Alert Box!");
-}
-
-function test() {
-    document.getElementById("demo").style.visibility = "hidden";
-    console.log("Test func called!")
-}
-
 function hide_element() {
     setTimeout(function() {
         let flash_message = document.getElementById("info_mess");
@@ -28,4 +15,22 @@ function show_password() {
     }
 }
 
+function show_cart(id) {
+    var opt = document.getElementById(id);
+    if (opt.style.display == "none") {
+        opt.style.display = "block";   
+    }
+    else {
+        opt.style.display = "none";
+    }
+}
+
+function deletionConfirmation(id) {
+    var btn = document.getElementById(id);
+    if (btn.style.display == "none") {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
+}
 // this works

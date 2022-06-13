@@ -7,6 +7,7 @@ from cs50 import SQL
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required
+
 logging.basicConfig(filename='logging.log',level=logging.CRITICAL,
                     format= "[%(levelname)s] %(asctime)s - %(message)s")
 
@@ -17,18 +18,18 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 current_dist = {}
 
-# username = "taherali"
-# password = generate_password_hash("jhalrapatan420")
 
 # Configure session
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+
 # db = SQL("sqlite:///shop.db")
 def get_db_connection():
     conn = sqlite3.connect("shop.db")
     return conn
+
 
 @app.after_request
 def after_request(response):
@@ -37,6 +38,7 @@ def after_request(response):
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     return response
+
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
@@ -82,8 +84,21 @@ def index():
                         mrp REAL NOT NULL,
                         expiry TEXT NOT NULL,
                         quantity INTEGER NOT NULL,
-                        FOREIGN KEY(id) REFERENCES users(id)
+                        FOREIGN KEY(id) REFERENCES users(user_id)
                         )""")
+
+            """CREATE TABLE IF NOT EXISTS med_details(
+                id INTEGER,
+                med_no INTEGER PRIMARY KEY AUTOINCREMENT,
+                med_name TEXT NOT NULL,
+                rate REAL,
+                mrp REAL NOT NULL,
+                expiry TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                # New part
+                total REAL NOT NULL,
+                FOREIGN KEY(id) REFERENCES users(user_id)
+                )"""
 
             c.execute("""CREATE TABLE IF NOT EXISTS bill_info (
                         id INTEGER NOT NULL,
@@ -94,13 +109,19 @@ def index():
                         FOREIGN KEY(invoice_no) REFERENCES bills(invoice_no),
                         FOREIGN KEY(med_name) REFERENCES med_details(med_name)
                         )""")
+                    
+            c.execute("""CREATE TABLE IF NOT EXISTS cart (
+                        id INTEGER NOT NULL,
+                        med_name TEXT NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        total REAL NOT NULL,
+                        FOREIGN KEY(id) REFERENCES users(user_id)
+                        )""")
 
-            # Itmes removed from bill_info table
-            # rate REAL NOT NULL,
-            # mrp REAL NOT NULL,
-            # expiry TEXT NOT NULL,
+        medicines = c.execute("SELECT med_name, expiry, rate, mrp, quantity, med_no FROM med_details WHERE id = ?", (session["user_id"],)).fetchall()
+        
 
-        return render_template("index.html", level="primary")
+        return render_template("index.html", level="primary", medicines=medicines)
         #this is the latest and working version
 
 
@@ -152,6 +173,19 @@ def addBill():
         return redirect("/additems")
 
 
+@app.route("/showBills", methods=["GET"])
+@login_required
+def showBills():
+
+    # Connect to database.
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    bills = c.execute("SELECT invoice_no, dist_name, date, no_of_items FROM bills WHERE id = ?", (session["user_id"],)).fetchall()
+
+    return render_template("billInfo.html", bills=bills)
+
+
 @app.route("/additems", methods=["GET", "POST"])
 @login_required
 def additems():
@@ -198,8 +232,6 @@ def additems():
 
             for item in bill_items:
 
-                # Check medicines and insert value into med_details table
-                # will do afterwards
                 if c.execute("SELECT * FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone():
                     price = c.execute("SELECT mrp FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0] 
                     expiry = c.execute("SELECT expiry FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0]
@@ -208,46 +240,16 @@ def additems():
                         existing_quantity = int(c.execute("SELECT quantity FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0])
                         c.execute("UPDATE med_details SET quantity = ? WHERE med_name = ? and id = ?", (existing_quantity + item["quantity"], item["medName"], session["user_id"]))
 
-                        # c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
-                        # (session["user_id"], item["medName"], item["rate"], item["mrp"], item["expiry"], existing_quantity + item["quantity"]))
-
                     else:
                         c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
                         (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
 
                 else:
-                    # Will do this afterwards.
                     c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
                     (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
 
                 c.execute("INSERT INTO bill_info(id, invoice_no, med_name, quantity) VALUES(?,?,?,?)", 
                 (session["user_id"], current_dist["invoiceNo"], item["medName"], item["quantity"]))
-
-            
-
-            # id INTEGER NOT NULL,
-            # invoice_no TEXT,
-            # med_name TEXT,
-            # quantity INTEGER NOT NULL,
-
-            # id INTEGER,
-            # med_no INTEGER PRIMARY KEY AUTOINCREMENT,
-            # med_name TEXT NOT NULL,
-            # rate REAL,
-            # mrp REAL NOT NULL,
-            # expiry TEXT NOT NULL,
-            # quantity INTEGER NOT NULL,
-            # FOREIGN KEY(id) REFERENCES users(id)
-
-            """
-            id INTEGER,
-            invoice_no TEXT PRIMARY KEY,
-            dist_name TEXT NOT NULL,
-            date TEXT NOT NULL,
-            no_of_items INTEGER NOT NULL,
-            FOREIGN KEY(dist_name) REFERENCES distributor_info(dist_name),
-            FOREIGN KEY(id) REFERENCES users(user_id)
-            """
 
         return redirect("/")
         
@@ -257,6 +259,32 @@ def additems():
             current_dist=current_dist)
         except KeyError:
             return redirect("/addBill")
+
+
+@app.route("/addToCart", methods=["GET"])
+@login_required
+def addToCart():
+    if request.method == "GET":
+        quantity = request.args.get("quantity")
+        med_no = request.args.get("current_row_index")
+
+        conn = get_db_connection()
+        c = conn.cursor()
+
+        med_name = c.execute("SELECT med_name FROM med_details WHERE id = ? and med_no = ?", (session["user_id"], med_no)).fetchone()[0]
+        print(med_name)
+        # distributor_name = c.execute("SELECT")
+
+        """CREATE TABLE IF NOT EXISTS cart (
+            id INTEGER NOT NULL,
+            med_name TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            total REAL NOT NULL,
+            FOREIGN KEY(id) REFERENCES users(user_id)
+            )"""
+        
+        flash("Item successfully added to cart!")
+        return redirect("/")
 
 
 @app.route("/addDist", methods=["GET", "POST"])
@@ -309,9 +337,29 @@ def distInfo():
     return render_template("distInfo.html", level="primary", distributors=distributors)
 
 
+@app.route("/removeDist", methods=["GET", "POST"])
+@login_required
+def removeDist():
+    distributor_id = list(request.form)[0]
+    
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    with conn:
+        c.execute("DELETE FROM distributor_info WHERE dist_id = ?", (distributor_id,))
+
+    flash("Distributor removed succesfully!")
+    return redirect("/distInfo")
+
+
 @app.route("/test")
 @login_required
 def test():
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    test = c.execute("SELECT * FROM distributor_info ORDER BY contact_no").fetchall()
+    print(test)
     return render_template("test.html")
 
 
@@ -348,8 +396,6 @@ def login():
         # Remember which user has logged in
         session["user_id"] = int(c.execute("SELECT user_id FROM users WHERE user_name = ?", (request.form.get("username"),)).fetchone()[0])
         session["username"] = request.form.get("username").strip()
-        print(session["user_id"])
-        print(session["username"])
 
         flash("Successfully logged In!")
         return redirect("/")
@@ -396,7 +442,6 @@ def register():
         
         flash("Successfully Registered!")
         return redirect("/login")
-
 
 
 if __name__ == "__main__":

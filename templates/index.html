@@ -9,27 +9,34 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>foo</th>
-                    <th>bar</th>
-                    <th>baz</th>
+                    <th style="width: 16.66%;">Medicine Name</th>
+                    <th style="width: 16.66%;">Expiry</th>
+                    <th style="width: 16.66%;">Net Rate</th>
+                    <th style="width: 16.66%;">MRP</th>
+                    <th style="width: 16.66;">Quantity</th>
+                    <th style="width: 16.66%;">Add to cart</th>
                 </tr>
             </thead>
             <tbody>
+                {% for medicine in medicines %}
                 <tr>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>3</td>
+                    <td>{{medicine[0]}}</td>
+                    <td>{{medicine[1]}}</td>
+                    <td>₹ {{medicine[2]}}</td>
+                    <td>₹ {{medicine[3]}}</td>
+                    <td>{{medicine[4]}}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="show_cart('addToCart{{medicine[5]}}')">Add to Cart</button>
+                        <div style="display: none; margin: 7px 5px;" id="addToCart{{medicine[5]}}">
+                            <form method="get" action="/addToCart">
+                                <input class="form-control mx-auto w-auto" autofocus name="quantity" placeholder="Quantity" value="1" type="number">
+                                <input type="submit" value="Add" class="btn btn-success mt-2">
+                                <input type="hidden" value="{{medicine[5]}}" name="current_row_index">
+                            </form>
+                        </div>
+                    </td>
                 </tr>
-                <tr>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>3</td>
-                </tr>
-                <tr>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>3</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

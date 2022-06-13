@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Bills
+{% endblock %}
+    
+{% block main %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Invoice No.</th>
+                <th>Distributor Name</th>
+                <th>Date</th>
+                <th>No. of Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bill in bills %}
+            <tr>
+                <td> {{ bill[0] }} </td>
+                <td> {{ bill[1] }} </td>
+                <td> {{ bill[2] }} </td>
+                <td> {{ bill[3] }} </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
