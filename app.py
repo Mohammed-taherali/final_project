@@ -5,6 +5,7 @@ import logging
 from datetime import date
 from cs50 import SQL
 from werkzeug.security import check_password_hash, generate_password_hash
+import re
 
 from helpers import apology, login_required
 
@@ -272,11 +273,14 @@ def addToCart():
         c = conn.cursor()
 
         med_name = c.execute("SELECT med_name FROM med_details WHERE id = ? and med_no = ?", (session["user_id"], med_no)).fetchone()[0]
-        dist_name = str(c.execute("""SELECT dist_name FROM bills, bill_info, med_details WHERE
+        dist_name = str(c.execute("""SELECT DISTINCT dist_name FROM bills, bill_info, med_details WHERE
                                 med_details.med_name = bill_info.med_name AND
                                 bill_info.invoice_no = bills.invoice_no AND
-                                med_details.med_name = ?
-                                """, (med_name,)).fetchall())                          
+                                med_details.med_name = ? and bills.id = ?
+                                """, (med_name,session['user_id'])).fetchall())
+        reg = re.compile('\w+')
+        distributors = sorted(reg.findall(dist_name))
+        dist_name = ', '.join(distributors)                          
         price = float(c.execute("SELECT mrp FROM med_details WHERE id = ? and med_no = ?", (session["user_id"], med_no)).fetchone()[0])
 
         with conn:
@@ -293,7 +297,9 @@ def cart():
     conn = get_db_connection()
     c = conn.cursor()
     cart_details = c.execute("SELECT med_name, quantity, total, dist_name FROM cart WHERE id = ?", (session['user_id'], )).fetchall()
-    return render_template("cart.html", cart_details=cart_details)
+    total = c.execute("SELECT sum(total) FROM cart WHERE id = ?", (session['user_id'],)).fetchone()[0]
+    print(total)
+    return render_template("cart.html", cart_details=cart_details, total=total)
 
 
 @app.route("/addMed", methods=["POST"])
@@ -409,35 +415,16 @@ def removeDist():
     return redirect("/distInfo")
 
 
+@app.route("/customers")
+@login_required
+def customers():
+    return render_template("customers.html")
+
+
 @app.route("/test")
 @login_required
 def test():
 
-    conn = get_db_connection()
-    c = conn.cursor()
-    # t = "dist_name ASC"
-    # qry = "SELECT * FROM distributor_info WHERE id = {} ORDER BY {} ".format(session["user_id"], t)
-    # print(qry)
-    # test = c.execute(qry).fetchall()
-    # print(test)
-
-    # t1 = c.execute("""SELECT dist_name FROM bills, bill_info, med_details WHERE
-    #             med_details.med_name = bill_info.med_name AND
-    #             bill_info.invoice_no = bills.invoice_no AND
-    #             med_details.med_name = 'MED 1'
-    #             """).fetchall()
-
-    # print(t1)
-    """CREATE TABLE IF NOT EXISTS cart (
-        id INTEGER NOT NULL,
-        med_name TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
-        total REAL NOT NULL,
-        dist_name TEXT,
-        FOREIGN KEY(id) REFERENCES users(user_id)
-        )"""
-    with conn:
-        c.execute("INSERT INTO cart(id, med_name, quantity, total, dist_name) VALUES(?,?,?,?,?)", (session["user_id"], 'MED 3', 2, 60.0, 'RAO'))
     return render_template("test.html")
 
 

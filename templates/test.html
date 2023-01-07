@@ -22,6 +22,24 @@
     <input class="form-control mx-auto w-auto formInputs" autofocus placeholder="test">name
 </form>
 </div>
+
+
+
+<input name="testInput" placeholder="Testing" id="testInput">
+
+<p id="a1"></p>
+
+<script>
+    var element = document.getElementById("testInput");
+
+    element.addEventListener('input', abcd);
+
+    function abcd() {
+        var t1 = document.getElementById("a1");
+        t1.innerHTML = "hi"
+    }
+</script>
+
 {% endblock %}
 
 <!-- {% block script %}

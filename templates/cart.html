@@ -19,10 +19,14 @@
             <tr>
                 <td>{{ medicine[0] }}</td>
                 <td>{{ medicine[1] }}</td>
-                <td>{{ medicine[2] }}</td>
+                <td>₹ {{ medicine[2] }}</td>
                 <td>{{ medicine[3] }}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td colspan="2" class="border-0 fw-bold text-end" style="padding-right: 100px;">Total</td>
+                <td class="border-0 fw-bold">₹ {{ total }}</td>
+            </tr>
         </tbody>
     </table>
 {% endblock %}
