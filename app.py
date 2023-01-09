@@ -52,6 +52,7 @@ def index():
 
         conn = get_db_connection()
         c = conn.cursor()
+
         with conn:
             c.execute("""CREATE TABLE IF NOT EXISTS users (
                         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,21 +86,9 @@ def index():
                         mrp REAL NOT NULL,
                         expiry TEXT NOT NULL,
                         quantity INTEGER NOT NULL,
+                        total REAL NOT NULL,
                         FOREIGN KEY(id) REFERENCES users(user_id)
                         )""")
-
-            """CREATE TABLE IF NOT EXISTS med_details(
-                id INTEGER,
-                med_no INTEGER PRIMARY KEY AUTOINCREMENT,
-                med_name TEXT NOT NULL,
-                rate REAL,
-                mrp REAL NOT NULL,
-                expiry TEXT NOT NULL,
-                quantity INTEGER NOT NULL,
-                # New part
-                total REAL NOT NULL,
-                FOREIGN KEY(id) REFERENCES users(user_id)
-                )"""
 
             c.execute("""CREATE TABLE IF NOT EXISTS bill_info (
                         id INTEGER NOT NULL,
@@ -116,14 +105,20 @@ def index():
                         med_name TEXT NOT NULL,
                         quantity INTEGER NOT NULL,
                         total REAL NOT NULL,
+                        dist_name TEXT,
                         FOREIGN KEY(id) REFERENCES users(user_id)
                         )""")
 
-        medicines = c.execute("SELECT med_name, expiry, rate, mrp, quantity, med_no FROM med_details WHERE id = ?", (session["user_id"],)).fetchall()
-        
-
-        return render_template("index.html", level="primary", medicines=medicines)
-        #this is the latest and working version
+        if request.form.get("orderBy"):
+            print(request.form.get("orderBy"))  
+            qry = "SELECT med_name, expiry, quantity, mrp, med_no, total FROM med_details WHERE id = {} ORDER BY {}".format(session["user_id"], request.form.get("orderBy"))
+            medicines = c.execute(qry).fetchall()
+            total = c.execute("SELECT sum(total) FROM med_details WHERE id = ?", (session["user_id"], )).fetchone()[0]
+            return render_template("index.html", medicines=medicines, total=total)  
+        else:
+            medicines = c.execute("SELECT med_name, expiry, quantity, mrp, med_no, total FROM med_details WHERE id = ? ORDER BY med_name", (session["user_id"],)).fetchall()
+            total = c.execute("SELECT sum(total) FROM med_details WHERE id = ?", (session["user_id"], )).fetchone()[0]
+            return render_template("index.html", level="primary", medicines=medicines, total=total)
 
 
 @app.route("/addBill", methods=["GET", "POST"])
@@ -234,20 +229,20 @@ def additems():
             for item in bill_items:
 
                 if c.execute("SELECT * FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone():
-                    price = c.execute("SELECT mrp FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0] 
+                    price = float(c.execute("SELECT mrp FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0]) 
                     expiry = c.execute("SELECT expiry FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0]
 
                     if price == item["mrp"] and expiry == item["expiry"]:
                         existing_quantity = int(c.execute("SELECT quantity FROM med_details WHERE med_name = ? and id = ?", (item["medName"], session["user_id"])).fetchone()[0])
-                        c.execute("UPDATE med_details SET quantity = ? WHERE med_name = ? and id = ?", (existing_quantity + item["quantity"], item["medName"], session["user_id"]))
+                        c.execute("UPDATE med_details SET quantity = ?, total = ? WHERE med_name = ? and id = ?", (existing_quantity + item["quantity"], (existing_quantity + item["quantity"]) * price, item["medName"], session["user_id"]))
 
-                    else:
-                        c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
-                        (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
+                    # else:
+                    #     c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity, total) VALUES(?,?,?,?,?,?,?)", 
+                    #     (session["user_id"], item["medName"], item["rate"] + (tax * item["rate"]), item["mrp"], item["expiry"], item["quantity"], item["mrp"] * item["quantity"]))
 
                 else:
-                    c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity) VALUES(?,?,?,?,?,?)", 
-                    (session["user_id"], item["medName"], item["rate"] + tax * item["rate"], item["mrp"], item["expiry"], item["quantity"]))
+                    c.execute("INSERT INTO med_details(id, med_name, rate, mrp, expiry, quantity, total) VALUES(?,?,?,?,?,?,?)", 
+                    (session["user_id"], item["medName"], item["rate"] + (tax * item["rate"]), item["mrp"], item["expiry"], item["quantity"], item["mrp"] * item["quantity"]))
 
                 c.execute("INSERT INTO bill_info(id, invoice_no, med_name, quantity) VALUES(?,?,?,?)", 
                 (session["user_id"], current_dist["invoiceNo"], item["medName"], item["quantity"]))
@@ -265,15 +260,19 @@ def additems():
 @app.route("/addToCart", methods=["GET"])
 @login_required
 def addToCart():
+
     if request.method == "GET":
-        quantity = request.args.get("quantity")
+        try:
+            quantity = int(request.args.get("quantity"))
+        except ValueError:
+            flash("PLEASE ENTER A VALID INTEGER VALUE!")
+            return redirect("/")
         med_no = request.args.get("current_row_index")
 
         conn = get_db_connection()
         c = conn.cursor()
 
         med_name = c.execute("SELECT med_name FROM med_details WHERE id = ? and med_no = ?", (session["user_id"], med_no)).fetchone()[0]
-<<<<<<< HEAD
         dist_name = str(c.execute("""SELECT DISTINCT dist_name FROM bills, bill_info, med_details WHERE
                                 med_details.med_name = bill_info.med_name AND
                                 bill_info.invoice_no = bills.invoice_no AND
@@ -283,24 +282,15 @@ def addToCart():
         distributors = sorted(reg.findall(dist_name))
         dist_name = ', '.join(distributors)                          
         price = float(c.execute("SELECT mrp FROM med_details WHERE id = ? and med_no = ?", (session["user_id"], med_no)).fetchone()[0])
-=======
-        print(med_name)
-        # distributor_name = c.execute("SELECT")
->>>>>>> parent of 1895fdd (final update 28/6/22)
 
-        """CREATE TABLE IF NOT EXISTS cart (
-            id INTEGER NOT NULL,
-            med_name TEXT NOT NULL,
-            quantity INTEGER NOT NULL,
-            total REAL NOT NULL,
-            FOREIGN KEY(id) REFERENCES users(user_id)
-            )"""
+        with conn:
+            c.execute("INSERT INTO cart(id, med_name, quantity, total, dist_name) VALUES(?,?,?,?,?)", 
+            (session["user_id"], med_name, quantity, (price*quantity), dist_name))
         
         flash("Item successfully added to cart!")
         return redirect("/")
 
 
-<<<<<<< HEAD
 @app.route("/cart")
 @login_required
 def cart():
@@ -357,8 +347,6 @@ def addMed():
         return redirect("/")
 
 
-=======
->>>>>>> parent of 1895fdd (final update 28/6/22)
 @app.route("/addDist", methods=["GET", "POST"])
 @login_required
 def addDist():
@@ -383,15 +371,18 @@ def addDist():
 
         if not distName or not distId or not distContact:
             flash("Please fill in all the details!")
-            return render_template("addDist.html", level="warning")
+            return redirect("/addDist")
+            # return render_template("addDist.html", level="warning")
 
         if c.execute("SELECT dist_name FROM distributor_info WHERE dist_name = ? and id = ?", (distName, session["user_id"])).fetchone():
             flash("Distributor with this name exists!")
-            return render_template("addDist.html", level="warning")
+            return redirect("/addDist")
+            # return render_template("addDist.html", level="warning")
 
         if c.execute("SELECT * FROM distributor_info WHERE dist_id = ? and id + ?", (distId, session["user_id"])).fetchone():
             flash("Please add a unique distributor Id!")
-            return render_template("addDist.html", level="warning")
+            return redirect("/addDist")
+            # return render_template("addDist.html", level="warning")
 
         with conn:
             c.execute("INSERT INTO distributor_info(id, dist_id, dist_name, contact_no) values(?, ?, ?, ?)", (session["user_id"], distId.strip().upper(), distName.strip().upper(), distContact))
@@ -434,13 +425,6 @@ def customers():
 @login_required
 def test():
 
-<<<<<<< HEAD
-=======
-    conn = get_db_connection()
-    c = conn.cursor()
-    test = c.execute("SELECT * FROM distributor_info ORDER BY contact_no").fetchall()
-    print(test)
->>>>>>> parent of 1895fdd (final update 28/6/22)
     return render_template("test.html")
 
 
@@ -526,4 +510,4 @@ def register():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=80)

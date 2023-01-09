@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Distributors</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for medicine in cart_details %}
+            <tr>
+                <td>{{ medicine[0] }}</td>
+                <td>{{ medicine[1] }}</td>
+                <td>₹ {{ medicine[2] }}</td>
+                <td>{{ medicine[3] }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="2" class="border-0 fw-bold text-end" style="padding-right: 100px;">Total</td>
+                <td class="border-0 fw-bold">₹ {{ total }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

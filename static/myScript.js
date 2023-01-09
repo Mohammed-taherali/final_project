@@ -33,4 +33,14 @@ function deletionConfirmation(id) {
         btn.style.display = "none";
     }
 }
+
+function addMed(){
+    var form = document.getElementById("addmed");
+    if (form.style.display == "none") {
+        form.style.display = "block";
+    }
+    else {
+        form.style.display = "none";
+    }
+}
 // this works
