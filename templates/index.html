@@ -5,79 +5,38 @@
 {% endblock %}
 
 {% block main %}
-                   <!-- CREATE TABLE IF NOT EXISTS med_details(
-                        id INTEGER,
-                        med_no INTEGER PRIMARY KEY AUTOINCREMENT,
-                        med_name TEXT NOT NULL,
-                        rate REAL,
-                        mrp REAL NOT NULL,
-                        expiry TEXT NOT NULL,
-                        quantity INTEGER NOT NULL,
-                        total REAL NOT NULL,
-                        FOREIGN KEY(id) REFERENCES users(user_id) -->
-
-    <input type="button" class="btn btn-primary" onclick="addMed()" value="Add Medicine">
-    <div class="container-fluid" style="display: none;" id="addmed">
-        <form action="/addMed" method="post">
-            <div class="row">
-            <input type="text" class="form-control w-auto mx-auto formInputs" autofocus name="med_name" placeholder="Medicine Name">
-            <input type="text" class="form-control w-auto mx-auto formInputs" autofocus name="mrp" placeholder="MRP">
-            <input type="text" class="form-control w-auto mx-auto formInputs" autofocus name="expiry" placeholder="Expiry">
-            <input type="text" class="form-control w-auto mx-auto formInputs" autofocus name="quantity" placeholder="Quantity"> 
-            </div>
-            <input type="submit" class="btn btn-info" value="Add Medicine">
-        </form>
-    </div>
-    <br>
-    <div>
-        <form action="/" method="post">
-            <select name="orderBy" onchange='if(this.value != 0) { this.form.submit(); }' class="form-select w-auto ms-auto my-2 bg-light">
-                <option selected disabled>Order By</option>
-                <option value="med_name ASC">Medicine Name</option>
-                <option value="expiry DESC">Expiry Date (desc)</option>
-                <option value="expiry ASC">Expiry Date (asc)</option>
-            </select>
-        </form>
-    </div>
     <div class="container-fluid">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <!--SELECT med_name, expiry, quantity, mrp, med_no, total FROM med_details WHERE id = ?", -->
                     <th style="width: 16.66%;">Medicine Name</th>
                     <th style="width: 16.66%;">Expiry</th>
-                    <th style="width: 16.66%;">Quantity</th>
+                    <th style="width: 16.66%;">Net Rate</th>
                     <th style="width: 16.66%;">MRP</th>
-                    <th style="width: 16.66;">Total</th>
+                    <th style="width: 16.66;">Quantity</th>
                     <th style="width: 16.66%;">Add to cart</th>
                 </tr>
             </thead>
             <tbody>
-                {% if medicines %}
                 {% for medicine in medicines %}
                 <tr>
                     <td>{{medicine[0]}}</td>
                     <td>{{medicine[1]}}</td>
-                    <td>{{medicine[2]}}</td>
+                    <td>₹ {{medicine[2]}}</td>
                     <td>₹ {{medicine[3]}}</td>
-                    <td>₹ {{medicine[5]}}</td>
+                    <td>{{medicine[4]}}</td>
                     <td>
-                        <button class="btn btn-primary" onclick="show_cart('addToCart{{medicine[4]}}')">Add to Cart</button>
-                        <div style="display: none; margin: 7px 5px;" id="addToCart{{medicine[4]}}">
+                        <button class="btn btn-primary" onclick="show_cart('addToCart{{medicine[5]}}')">Add to Cart</button>
+                        <div style="display: none; margin: 7px 5px;" id="addToCart{{medicine[5]}}">
                             <form method="get" action="/addToCart">
                                 <input class="form-control mx-auto w-auto" autofocus name="quantity" placeholder="Quantity" value="1" type="number">
                                 <input type="submit" value="Add" class="btn btn-success mt-2">
-                                <input type="hidden" value="{{medicine[4]}}" name="current_row_index">
+                                <input type="hidden" value="{{medicine[5]}}" name="current_row_index">
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
-                <tr>
-                    <td colspan="4" class="border-0 fw-bold text-end" style="padding-right: 90px;" >Total</td>
-                    <td class="border-0 fw-bold">₹ {{ total }}</td>
-                </tr>
-                {% endif %}
             </tbody>
         </table>
     </div>
